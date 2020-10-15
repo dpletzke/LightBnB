@@ -78,7 +78,6 @@ exports.getAllReservations = getAllReservations;
 const getAllProperties = function(options, limit = 10) {
 
   const values = [limit];
-  console.log('whooo');
   return pool.query(`
   SELECT *
   FROM properties
