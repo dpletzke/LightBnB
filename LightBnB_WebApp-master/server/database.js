@@ -129,12 +129,12 @@ const getAllProperties = function(options, limit = 10) {
   /* must update if adding a new WHERE filter */ 
   if(Object.keys(options).some(key => {
     console.log(key, options[key]);
-    return options[key] && (
-      key === 'city' ||
-      key === 'owner_id' ||
-      key === 'minimum_price_per_night' ||
-      key === 'maximum_price_per_night' 
-    );
+    return options[key] && [
+      'city',
+      'owner_id',
+      'minimum_price_per_night',
+      'maximum_price_per_night'
+    ].includes(key);
   })) {
     queryString += 'WHERE ';
   
