@@ -25,11 +25,7 @@ const getUserWithEmail = function(email) {
   FROM users
   WHERE users.email = $1; 
   `, values).then(res => {
-    if (res.rows.length) {
-      return res.rows[0];
-    } else {
-      return null;
-    }
+    return res.rows.length ? res.rows[0] : null;
   });
 
 }
@@ -48,11 +44,7 @@ const getUserWithId = function(id) {
   FROM users
   WHERE users.id = $1; 
   `, values).then(res => {
-    if (res.rows.length) {
-      return res.rows[0];
-    } else {
-      return null;
-    }
+    return res.rows.length ? res.rows[0] : null;
   });
 
 }
@@ -73,11 +65,7 @@ const addUser =  function(user) {
   VALUES ($1, $2, $3)
   RETURNING *;
   `, values).then(res => {
-    if(res.rows.length) {
-      return res.rows[0];
-    } else {
-      return null
-    }
+    return res.rows.length ? res.rows[0] : null;
   });
 
 }
