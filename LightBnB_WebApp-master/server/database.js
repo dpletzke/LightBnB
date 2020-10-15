@@ -78,7 +78,23 @@ exports.addUser = addUser;
  * @return {Promise<[{}]>} A promise to the reservations.
  */
 const getAllReservations = function(guest_id, limit = 10) {
-  return getAllProperties(null, 2);
+  const values = [limit];
+  return pool.query(
+  `SELECT  reservations.*
+        ,properties.*
+        ,AVG(rating) AS average_rating
+  FROM properties
+  JOIN reservations
+  ON properties.id = reservations.property_id
+  JOIN property_reviews
+  ON properties.id = property_reviews.property_id
+  WHERE reservations.guest_id = 1 
+  GROUP BY  reservations.id
+            ,properties.id
+  ORDER BY reservations.start_date
+  LIMIT $1;`, values).then(res => {
+    return res.rows.length ? res.rows : null;
+  });
 }
 exports.getAllReservations = getAllReservations;
 
@@ -91,13 +107,81 @@ exports.getAllReservations = getAllReservations;
  * @return {Promise<[{}]>}  A promise to the properties.
  */
 const getAllProperties = function(options, limit = 10) {
+  const {
+    city,
+    owner_id,
+    minimum_price_per_night,
+    maximum_price_per_night,
+    minimum_rating
+  } = options;
+  
+  const queryValues = [];
+  const whereStrings = [];
+  const havingStrings = [];
+  let queryString = '';
 
-  const values = [limit];
-  return pool.query(`
-  SELECT *
-  FROM properties
-  LIMIT $1
-  `, values).then(res => {
+  queryString += `
+    SELECT properties.*, avg(property_reviews.rating) as average_rating
+    FROM properties
+    JOIN property_reviews ON properties.id = property_id `;
+
+  /* Checks if an option used and an option handled by WHERE */
+  /* must update if adding a new WHERE filter */ 
+  if(Object.keys(options).some(key => {
+    return options[key] && (
+      'city',
+      'owner_id',
+      'minimum_price_per_night',
+      'maximum_price_per_night'
+    ).includes(key);
+  })) {
+    queryString += 'WHERE ';
+
+    if (city) {
+      queryValues.push(city);
+      whereStrings.push(`city LIKE $${queryValues.length}`);
+    }
+    if (owner_id) {
+      queryValues.push(owner_id);
+      whereStrings.push(`owner_id = $${queryValues.length}`);
+    }
+    if (minimum_price_per_night) {
+      queryValues.push(Number(minimum_price_per_night));
+      whereStrings.push(`cost_per_night >= $${queryValues.length}`);
+    }
+    if (maximum_price_per_night) {
+      queryValues.push(Number(maximum_price_per_night) * 100);
+      whereStrings.push(`cost_per_night <= $${queryValues.length}`);
+    }
+    queryString += whereStrings.length ? whereStrings.join(' AND ') + ' ' : '';
+  }
+
+  queryString += `GROUP BY properties.id `
+
+  /* similar to above, checks if HAVING option used */
+  if(Object.entries(options).some(op => {
+    return op[1] && (
+      'minimum_rating'
+    ).includes(op[0]);
+  })) {
+    queryString += 'HAVING ';
+    if(minimum_rating) {
+      queryValues.push(Number(minimum_rating));
+      havingStrings.push(`
+      avg(property_reviews.rating) >= $${queryValues.length} `);
+    }
+    queryString += 
+      havingStrings.length ?
+      havingStrings.join(' AND ') + ' ' : '';
+  }
+
+  queryValues.push(limit);
+  queryString += `
+  ORDER BY cost_per_night
+  LIMIT $${queryValues.length}`
+
+  console.log(queryString);
+  return pool.query(queryString, queryValues).then(res => {
     return res.rows
   });
 }
