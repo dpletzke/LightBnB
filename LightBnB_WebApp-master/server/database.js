@@ -128,17 +128,18 @@ const getAllProperties = function(options, limit = 10) {
   /* Checks if an option used and an option handled by WHERE */
   /* must update if adding a new WHERE filter */ 
   if(Object.keys(options).some(key => {
+    console.log(key, options[key]);
     return options[key] && (
-      'city',
-      'owner_id',
-      'minimum_price_per_night',
-      'maximum_price_per_night'
-    ).includes(key);
+      key === 'city' ||
+      key === 'owner_id' ||
+      key === 'minimum_price_per_night' ||
+      key === 'maximum_price_per_night' 
+    );
   })) {
     queryString += 'WHERE ';
-
+  
     if (city) {
-      queryValues.push(city);
+      queryValues.push(`%${city}%`);
       whereStrings.push(`city LIKE $${queryValues.length}`);
     }
     if (owner_id) {
@@ -146,7 +147,7 @@ const getAllProperties = function(options, limit = 10) {
       whereStrings.push(`owner_id = $${queryValues.length}`);
     }
     if (minimum_price_per_night) {
-      queryValues.push(Number(minimum_price_per_night));
+      queryValues.push(Number(minimum_price_per_night) * 100);
       whereStrings.push(`cost_per_night >= $${queryValues.length}`);
     }
     if (maximum_price_per_night) {
@@ -180,9 +181,10 @@ const getAllProperties = function(options, limit = 10) {
   ORDER BY cost_per_night
   LIMIT $${queryValues.length}`
 
-  console.log(queryString);
+  console.log(queryString, queryValues);
   return pool.query(queryString, queryValues).then(res => {
-    return res.rows
+    console.log(res.rows.length);
+    return res.rows;
   });
 }
 
