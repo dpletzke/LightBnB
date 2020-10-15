@@ -128,7 +128,6 @@ const getAllProperties = function(options, limit = 10) {
   /* Checks if an option used and an option handled by WHERE */
   /* must update if adding a new WHERE filter */ 
   if(Object.keys(options).some(key => {
-    console.log(key, options[key]);
     return options[key] && [
       'city',
       'owner_id',
@@ -181,9 +180,7 @@ const getAllProperties = function(options, limit = 10) {
   ORDER BY cost_per_night
   LIMIT $${queryValues.length}`
 
-  console.log(queryString, queryValues);
   return pool.query(queryString, queryValues).then(res => {
-    console.log(res.rows.length);
     return res.rows;
   });
 }
