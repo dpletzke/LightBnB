@@ -59,7 +59,6 @@ exports.getUserWithId = getUserWithId;
 const addUser =  function(user) {
   const { name, password, email } = user;
   const values = [name, email, password];
-  console.log(name, password, email);
   return pool.query(`
   INSERT INTO users (name, email, password)
   VALUES ($1, $2, $3)
