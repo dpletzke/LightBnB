@@ -1,6 +1,3 @@
-const properties = require('./json/properties.json');
-const users = require('./json/users.json');
-
 const { Pool } = require('pg');
 
 const pool = new Pool({
@@ -28,7 +25,7 @@ const getUserWithEmail = function(email) {
     return res.rows.length ? res.rows[0] : null;
   });
 
-}
+};
 exports.getUserWithEmail = getUserWithEmail;
 
 /**
@@ -47,7 +44,7 @@ const getUserWithId = function(id) {
     return res.rows.length ? res.rows[0] : null;
   });
 
-}
+};
 exports.getUserWithId = getUserWithId;
 
 
@@ -67,7 +64,7 @@ const addUser =  function(user) {
     return res.rows.length ? res.rows[0] : null;
   });
 
-}
+};
 exports.addUser = addUser;
 
 /// Reservations
@@ -80,7 +77,7 @@ exports.addUser = addUser;
 const getAllReservations = function(guest_id, limit = 10) {
   const values = [limit];
   return pool.query(
-  `SELECT  reservations.*
+    `SELECT  reservations.*
         ,properties.*
         ,AVG(rating) AS average_rating
   FROM properties
@@ -95,7 +92,7 @@ const getAllReservations = function(guest_id, limit = 10) {
   LIMIT $1;`, values).then(res => {
     return res.rows.length ? res.rows : null;
   });
-}
+};
 exports.getAllReservations = getAllReservations;
 
 /// Properties
@@ -126,8 +123,8 @@ const getAllProperties = function(options, limit = 10) {
     JOIN property_reviews ON properties.id = property_id `;
 
   /* Checks if an option used and an option handled by WHERE */
-  /* must update if adding a new WHERE filter */ 
-  if(Object.keys(options).some(key => {
+  /* must update if adding a new WHERE filter */
+  if (Object.keys(options).some(key => {
     return options[key] && [
       'city',
       'owner_id',
@@ -156,34 +153,34 @@ const getAllProperties = function(options, limit = 10) {
     queryString += whereStrings.length ? whereStrings.join(' AND ') + ' ' : '';
   }
 
-  queryString += `GROUP BY properties.id `
+  queryString += `GROUP BY properties.id `;
 
   /* similar to above, checks if HAVING option used */
-  if(Object.entries(options).some(op => {
+  if (Object.entries(options).some(op => {
     return op[1] && (
       'minimum_rating'
     ).includes(op[0]);
   })) {
     queryString += 'HAVING ';
-    if(minimum_rating) {
+    if (minimum_rating) {
       queryValues.push(Number(minimum_rating));
       havingStrings.push(`
       avg(property_reviews.rating) >= $${queryValues.length} `);
     }
-    queryString += 
+    queryString +=
       havingStrings.length ?
-      havingStrings.join(' AND ') + ' ' : '';
+        havingStrings.join(' AND ') + ' ' : '';
   }
 
   queryValues.push(limit);
   queryString += `
   ORDER BY cost_per_night
-  LIMIT $${queryValues.length}`
+  LIMIT $${queryValues.length}`;
 
   return pool.query(queryString, queryValues).then(res => {
     return res.rows;
   });
-}
+};
 
 exports.getAllProperties = getAllProperties;
 
@@ -194,38 +191,19 @@ exports.getAllProperties = getAllProperties;
  * @return {Promise<{}>} A promise to the property.
  */
 const addProperty = function(property) {
-  const {
-    title,
-    description,
-    owner_id,
-    cover_photo_url,
-    thumbnail_photo_url,
-    cost_per_night,
-    parking_spaces,
-    number_of_bathrooms,
-    number_of_bedrooms,
-    active,
-    province,
-    city,
-    country,
-    street,
-    post_code
-  } = property;
   const values = Object.values(property);
   const propString = Object.keys(property).map(k => `${k}`).join(', ');
   const valuesString = values.map((v, i) => `$${i + 1}`).join(', ');
-
   
   const queryString = `
   INSERT INTO properties (${propString})
   VALUES (${valuesString})
   RETURNING *;
-  `
-  console.log(queryString, values);
+  `;
   return pool.query(queryString, values).then(res => {
     return res.rows.length ? res.rows[0] : null;
   });
 
 
-}
+};
 exports.addProperty = addProperty;
